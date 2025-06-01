@@ -1103,7 +1103,7 @@ function prepareExistingDirectory(git, repositoryPath, repositoryUrl, clean, ref
                     }
                     core.endGroup();
                     if (remove) {
-                        core.warning(`Unable to clean or reset the repository. The repository will be recreated instead.`);
+                        throw new Error(`Unable to clean or reset the repository.`);
                     }
                 }
             }
