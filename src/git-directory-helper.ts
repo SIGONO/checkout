@@ -101,7 +101,7 @@ export async function prepareExistingDirectory(
         core.endGroup()
 
         if (remove) {
-          core.warning(
+          throw new Error(
             `Unable to clean or reset the repository. The repository will be recreated instead.`
           )
         }
