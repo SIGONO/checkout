@@ -1108,7 +1108,7 @@ function prepareExistingDirectory(git, repositoryPath, repositoryUrl, clean, ref
                 }
             }
             catch (error) {
-                core.warning(`Unable to prepare the existing repository. The repository will be recreated instead.`);
+                throw new Error(`Unable to prepare the existing repository. The repository will be recreated instead.`);
                 remove = true;
             }
         }

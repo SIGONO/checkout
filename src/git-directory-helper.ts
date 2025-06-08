@@ -107,7 +107,7 @@ export async function prepareExistingDirectory(
         }
       }
     } catch (error) {
-      core.warning(
+      throw new Error(
         `Unable to prepare the existing repository. The repository will be recreated instead.`
       )
       remove = true
