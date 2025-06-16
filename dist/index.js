@@ -1030,16 +1030,14 @@ function prepareExistingDirectory(git, repositoryPath, repositoryUrl, clean, ref
         var _a;
         assert.ok(repositoryPath, 'Expected repositoryPath to be defined');
         assert.ok(repositoryUrl, 'Expected repositoryUrl to be defined');
-        // Indicates whether to delete the directory contents
-        let remove = false;
         // Check whether using git or REST API
         if (!git) {
-            remove = true;
+            throw new Error('Git command manager is not defined. Cannot prepare existing directory.');
         }
         // Fetch URL does not match
         else if (!fsHelper.directoryExistsSync(path.join(repositoryPath, '.git')) ||
             repositoryUrl !== (yield git.tryGetFetchUrl())) {
-            remove = true;
+            throw new Error(`The repository at '${repositoryPath}' does not match the expected repository URL '${repositoryUrl}'. Please remove the directory and try again.`);
         }
         else {
             // Delete any index.lock and shallow.lock left by a previously canceled run or crashed git process
@@ -1088,36 +1086,22 @@ function prepareExistingDirectory(git, repositoryPath, repositoryUrl, clean, ref
                 core.endGroup();
                 // Check for submodules and delete any existing files if submodules are present
                 if (!(yield git.submoduleStatus())) {
-                    remove = true;
-                    core.info('Bad Submodules found, removing existing files');
+                    throw new Error('Bad Submodules found, removing existing files');
                 }
                 // Clean
                 if (clean) {
                     core.startGroup('Cleaning the repository');
                     if (!(yield git.tryClean())) {
-                        core.debug(`The clean command failed. This might be caused by: 1) path too long, 2) permission issue, or 3) file in use. For further investigation, manually run 'git clean -ffdx' on the directory '${repositoryPath}'.`);
-                        remove = true;
+                        throw new Error(`The clean command failed. This might be caused by: 1) path too long, 2) permission issue, or 3) file in use. For further investigation, manually run 'git clean -ffdx' on the directory '${repositoryPath}'.`);
                     }
                     else if (!(yield git.tryReset())) {
-                        remove = true;
+                        throw new Error(`The reset command failed. This might be caused by: 1) path too long, 2) permission issue, or 3) file in use. For further investigation, manually run 'git reset --hard HEAD' on the directory '${repositoryPath}'.`);
                     }
                     core.endGroup();
-                    if (remove) {
-                        throw new Error(`Unable to clean or reset the repository.`);
-                    }
                 }
             }
             catch (error) {
                 throw new Error(`Unable to prepare the existing repository. The repository will be recreated instead.`);
-                remove = true;
-            }
-        }
-        if (remove) {
-            // Delete the contents of the directory. Don't delete the directory itself
-            // since it might be the current working directory.
-            core.info(`Deleting the contents of '${repositoryPath}'`);
-            for (const file of yield fs.promises.readdir(repositoryPath)) {
-                yield io.rmRF(path.join(repositoryPath, file));
             }
         }
     });
