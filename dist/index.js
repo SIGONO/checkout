@@ -819,9 +819,15 @@ class GitCommandManager {
             return !!output.stdout.trim();
         });
     }
-    tryClean() {
+    tryClean(excludePatterns) {
         return __awaiter(this, void 0, void 0, function* () {
-            const output = yield this.execGit(['clean', '-ffdx'], true);
+            const args = ['clean', '-ffdx'];
+            if (excludePatterns) {
+                for (const pattern of excludePatterns) {
+                    args.push('-e', pattern);
+                }
+            }
+            const output = yield this.execGit(args, true);
             return output.exitCode === 0;
         });
     }
@@ -1021,11 +1027,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.prepareExistingDirectory = prepareExistingDirectory;
 const assert = __importStar(__nccwpck_require__(9491));
 const core = __importStar(__nccwpck_require__(2186));
-const fs = __importStar(__nccwpck_require__(7147));
 const fsHelper = __importStar(__nccwpck_require__(7219));
 const io = __importStar(__nccwpck_require__(7436));
 const path = __importStar(__nccwpck_require__(1017));
-function prepareExistingDirectory(git, repositoryPath, repositoryUrl, clean, ref) {
+function prepareExistingDirectory(git, repositoryPath, repositoryUrl, clean, ref, cleanExclude) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
         assert.ok(repositoryPath, 'Expected repositoryPath to be defined');
@@ -1037,7 +1042,7 @@ function prepareExistingDirectory(git, repositoryPath, repositoryUrl, clean, ref
         // Fetch URL does not match
         else if (!fsHelper.directoryExistsSync(path.join(repositoryPath, '.git')) ||
             repositoryUrl !== (yield git.tryGetFetchUrl())) {
-            throw new Error(`The repository at '${repositoryPath}' does not match the expected repository URL '${repositoryUrl}'. Please remove the directory and try again.`);
+            throw new Error(`The repository at '${repositoryPath}' does not match the expected URL '${repositoryUrl}'. Please remove the directory and try again.`);
         }
         else {
             // Delete any index.lock and shallow.lock left by a previously canceled run or crashed git process
@@ -1091,11 +1096,11 @@ function prepareExistingDirectory(git, repositoryPath, repositoryUrl, clean, ref
                 // Clean
                 if (clean) {
                     core.startGroup('Cleaning the repository');
-                    if (!(yield git.tryClean())) {
+                    if (!(yield git.tryClean(cleanExclude))) {
                         throw new Error(`The clean command failed. This might be caused by: 1) path too long, 2) permission issue, or 3) file in use. For further investigation, manually run 'git clean -ffdx' on the directory '${repositoryPath}'.`);
                     }
                     else if (!(yield git.tryReset())) {
-                        throw new Error(`The reset command failed. This might be caused by: 1) path too long, 2) permission issue, or 3) file in use. For further investigation, manually run 'git reset --hard HEAD' on the directory '${repositoryPath}'.`);
+                        throw new Error(`The reset command failed. This might be caused by: 1) path too long, 2) permission issue, or 3) file in use. For further investigation, manually run 'git reset --hard' on the directory '${repositoryPath}'.`);
                     }
                     core.endGroup();
                 }
@@ -1200,7 +1205,7 @@ function getSource(settings) {
             }
             // Prepare existing directory, otherwise recreate
             if (isExisting) {
-                yield gitDirectoryHelper.prepareExistingDirectory(git, settings.repositoryPath, repositoryUrl, settings.clean, settings.ref);
+                yield gitDirectoryHelper.prepareExistingDirectory(git, settings.repositoryPath, repositoryUrl, settings.clean, settings.ref, settings.cleanExclude);
             }
             if (!git) {
                 // Downloading using REST API
@@ -1750,6 +1755,9 @@ function getInputs() {
         // Clean
         result.clean = (core.getInput('clean') || 'true').toUpperCase() === 'TRUE';
         core.debug(`clean = ${result.clean}`);
+        // Clean exclude
+        result.cleanExclude = core.getMultilineInput('clean-exclude');
+        core.debug(`clean exclude = ${result.cleanExclude}`);
         // Filter
         const filter = core.getInput('filter');
         if (filter) {

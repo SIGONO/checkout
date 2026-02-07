@@ -78,6 +78,10 @@ Please refer to the [release page](https://github.com/actions/checkout/releases/
     # Default: true
     clean: ''
 
+    # Patterns to exclude from `git clean` via `-e` flag. Each pattern should be
+    # separated with new lines. Only used when `clean` is true.
+    clean-exclude: ''
+
     # Partially clone against a given filter. Overrides sparse-checkout if set.
     # Default: null
     filter: ''

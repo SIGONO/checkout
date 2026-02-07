@@ -30,6 +30,11 @@ export interface IGitSourceSettings {
   clean: boolean
 
   /**
+   * Patterns to exclude from git clean
+   */
+  cleanExclude: string[]
+
+  /**
    * The filter determining which objects to include
    */
   filter: string | undefined

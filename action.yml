@@ -57,6 +57,11 @@ inputs:
   clean:
     description: 'Whether to execute `git clean -ffdx && git reset --hard HEAD` before fetching'
     default: true
+  clean-exclude:
+    description: >
+      Patterns to exclude from `git clean` via `-e` flag.
+      Each pattern should be separated with new lines.
+      Only used when `clean` is true.
   filter:
     description: >
       Partially clone against a given filter.

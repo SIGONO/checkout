@@ -82,6 +82,10 @@ export async function getInputs(): Promise<IGitSourceSettings> {
   result.clean = (core.getInput('clean') || 'true').toUpperCase() === 'TRUE'
   core.debug(`clean = ${result.clean}`)
 
+  // Clean exclude
+  result.cleanExclude = core.getMultilineInput('clean-exclude')
+  core.debug(`clean exclude = ${result.cleanExclude}`)
+
   // Filter
   const filter = core.getInput('filter')
   if (filter) {
